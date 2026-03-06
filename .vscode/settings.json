@@ -1,0 +1,8 @@
+{
+    "files.exclude": {
+        "**/my_excluded_file.py": true,
+        "**/my_excluded_folder/": true,
+        "**/.venv": true,
+        "**/__pycache__": true
+    }
+}
