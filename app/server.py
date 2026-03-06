@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from src.api.bitrix_webhook import router as bitrix_router
+from app.routers.bitrix import router as bitrix_router
 from core import settings
 
 app = FastAPI(
@@ -12,5 +12,5 @@ app.include_router(bitrix_router)
 
 
 @app.get("/")
-def health_check():
-    return {"status": "running"}
+async def health_check():
+    return {"status": "ok"}

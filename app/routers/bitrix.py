@@ -1,10 +1,13 @@
 from fastapi import APIRouter, Request
 
-router = APIRouter(prefix="/webhook", tags=["Bitrix"])
+router = APIRouter(
+    prefix="/webhook",
+    tags=["Bitrix24"]
+)
 
 
-@router.post("/bitrix24")
-async def bitrix_webhook(request: Request):
+@router.post("/bitrix")
+async def receive_bitrix_webhook(request: Request):
     data = await request.json()
 
     print("Webhook recebido do Bitrix24:")
