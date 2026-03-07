@@ -1,12 +1,9 @@
-import logging
 import re
-
 import httpx
 from fastapi import APIRouter, HTTPException, Request, status
 
 from app.core.config import settings
 
-logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/webhook",
@@ -36,14 +33,12 @@ async def fetch_contact(contact_id: str) -> dict:
             return response.json()
 
     except httpx.HTTPStatusError as exc:
-        logger.exception("Bitrix24 retornou erro HTTP ao buscar contato.")
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Erro ao consultar contato no Bitrix24.",
         ) from exc
 
     except httpx.RequestError as exc:
-        logger.exception("Falha de comunicação com o Bitrix24.")
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Falha de comunicação com o Bitrix24.",
@@ -103,8 +98,6 @@ async def receive_bitrix_webhook(request: Request) -> dict:
     form = await request.form()
     payload = dict(form)
 
-    logger.info("Webhook Bitrix24 recebido: %s", payload)
-
     event_name = extract_payload_value(payload, "event")
     contact_id = get_contact_id(payload)
 
@@ -158,13 +151,6 @@ async def receive_bitrix_webhook(request: Request) -> dict:
 
     # print("Contato formatado para processamento: ", contact_formatted)
     # print("Números de telefone validados: ", phone)
-
-    logger.info(
-        "Evento processado com sucesso. event=%s contact_id=%s",
-        event_name,
-        contact_id,
-    )
-    logger.debug("Dados do contato retornados pelo Bitrix24: %s", contact_data)
 
     return {
         "ok": True,
