@@ -93,36 +93,8 @@ def validate_phone_number(phone: str) -> str | None:
     return digits
 
 
-@router.post("/bitrix", status_code=status.HTTP_200_OK)
-async def receive_bitrix_webhook(request: Request) -> dict:
-    form = await request.form()
-    payload = dict(form)
-
-    event_name = extract_payload_value(payload, "event")
-    contact_id = get_contact_id(payload)
-
-    if not event_name:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Evento não informado.",
-        )
-
-    if not contact_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="ID do contato não informado.",
-        )
-
-    contact_data = await fetch_contact(contact_id)
+def filter_useful_properties(contact_data: dict) -> dict:
     contact_data_result = contact_data.get("result", {})
-
-    # print()
-    # print()
-
-    # print("Dados do contato retornados pelo Bitrix24: ", contact_data_result.get("EMAIL", ["NÃO VEIO DA PROP EMAIL"]))
-
-    # print()
-    # print()
 
     has_email = True if contact_data_result.get("HAS_EMAIL", None) == "Y" else False
     has_phone = True if contact_data_result.get("HAS_PHONE", None) == "Y" else False
@@ -148,13 +120,35 @@ async def receive_bitrix_webhook(request: Request) -> dict:
         "PHONE": phone,
     }
 
+    return contact_formatted
 
-    # print("Contato formatado para processamento: ", contact_formatted)
-    # print("Números de telefone validados: ", phone)
+
+@router.post("/bitrix", status_code=status.HTTP_200_OK)
+async def receive_bitrix_webhook(request: Request) -> dict:
+    form = await request.form()
+    payload = dict(form)
+
+    event_name = extract_payload_value(payload, "event")
+    contact_id = get_contact_id(payload)
+
+    if not event_name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Evento não informado.",
+        )
+
+    if not contact_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="ID do contato não informado.",
+        )
+
+    contact_data = await fetch_contact(contact_id)
+    contact_formatted = filter_useful_properties(contact_data)
+
+    print("Contato formatado para processamento: ", contact_formatted)
 
     return {
-        "ok": True,
         "event": event_name,
-        "contact_id": contact_id,
-        "contact": contact_data,
+        "contact": contact_formatted,
     }
