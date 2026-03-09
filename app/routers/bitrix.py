@@ -113,13 +113,13 @@ def filter_useful_properties(contact_data: dict) -> dict:
     return contact_formatted
 
 
-async def update_contact_phone_field(contact_id, phone) -> dict:
+async def update_contact_phone_field(contact_id: str, new_phone: str) -> dict:
     url = f"{settings.BITRIX_WEBHOOK_URL}crm.contact.update.json"
 
     payload = {
         "id": contact_id,
         "fields": {
-            "Telefone": phone
+            "Telefone": new_phone
         }
     }
 
@@ -153,7 +153,14 @@ async def receive_bitrix_webhook(request: Request) -> dict:
     contact_data = await fetch_contact(contact_id)
     contact_formatted = filter_useful_properties(contact_data)
 
-    await update_contact_phone_field()
+    print(f"Contato formatado: {contact_formatted}")
+    
+    # transformar em string e concatenar os telefones da lista de telefones do cliente
+    phones_concatenados = ", ".join(contact_formatted.get("PHONE", []))
+    # print(f"Telefones concatenados: {phones_concatenados}")
+
+    # Verifica se o telefone está seguindoo padrão, se estiver, não precisa atualizar
+    await update_contact_phone_field(contact_id, phones_concatenados)
 
     return {
         "event": event_name,
