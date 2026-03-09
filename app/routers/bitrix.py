@@ -46,16 +46,6 @@ async def fetch_contact(contact_id: str) -> dict:
 
 
 def validate_phone_number(phone: str) -> str | None:
-    """
-    Normaliza e valida números de telefone brasileiros.
-
-    Formato final retornado:
-    55 + DDD + 9 + número
-    Exemplo: 5571999999999
-
-    Retorna None caso o número seja inválido.
-    """
-
     if not phone:
         return None
 
@@ -123,6 +113,23 @@ def filter_useful_properties(contact_data: dict) -> dict:
     return contact_formatted
 
 
+async def update_contact_phone_field(contact_id, phone) -> dict:
+    url = f"{settings.BITRIX_WEBHOOK_URL}crm.contact.update.json"
+
+    payload = {
+        "id": contact_id,
+        "fields": {
+            "Telefone": phone
+        }
+    }
+
+    async with httpx.AsyncClient(timeout=20) as client:
+        response = await client.post(url, json=payload)
+        response.raise_for_status()
+
+    return response.json()
+
+
 @router.post("/bitrix", status_code=status.HTTP_200_OK)
 async def receive_bitrix_webhook(request: Request) -> dict:
     form = await request.form()
@@ -146,7 +153,7 @@ async def receive_bitrix_webhook(request: Request) -> dict:
     contact_data = await fetch_contact(contact_id)
     contact_formatted = filter_useful_properties(contact_data)
 
-    print("Contato formatado para processamento: ", contact_formatted)
+    await update_contact_phone_field()
 
     return {
         "event": event_name,
