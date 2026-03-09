@@ -5,17 +5,13 @@ import httpx
 from fastapi import APIRouter, HTTPException, Request, status
 
 from app.core.config import settings
+from app.core.constants import CUSTOM_EMAIL_FIELD, PHONE_CORRECTED_FIELD, BITRIX_FLAG_NO, BITRIX_FLAG_YES, BITRIX_CONTACT_EVENTS
 
 
 router = APIRouter(
     prefix="/webhook",
     tags=["Bitrix24"],
 )
-
-PHONE_CORRECTED_FIELD = "UF_CRM_1773064884508"
-CUSTOM_EMAIL_FIELD = "UF_CRM_CONTACT_1691011566947"
-BITRIX_FLAG_YES = "Sim"
-BITRIX_FLAG_NO = "Não"
 
 
 def extract_payload_value(payload: dict, key: str) -> str | None:
@@ -195,7 +191,7 @@ async def receive_bitrix_webhook(request: Request) -> dict:
             detail="ID do contato nao informado.",
         )
 
-    if event_name not in {"ONCRMCONTACTADD", "ONCRMCONTACTUPDATE"}:
+    if event_name not in BITRIX_CONTACT_EVENTS:
         return {"event": event_name, "ignored": True}
 
     contact_data = await fetch_contact(contact_id)
