@@ -1,10 +1,8 @@
-﻿import logging
-import re
-
-import httpx
+﻿import httpx
 from fastapi import APIRouter, HTTPException, Request, status
 
 from app.core.config import settings
+from app.utils.phone import normalize_contact_phones
 from app.core.constants import CUSTOM_EMAIL_FIELD, PHONE_CORRECTED_FIELD, BITRIX_FLAG_NO, BITRIX_FLAG_YES, BITRIX_CONTACT_EVENTS
 
 
@@ -78,50 +76,6 @@ def extract_raw_phones(contact_data_result: dict) -> list[str]:
         return []
 
     return [phone.get("VALUE") for phone in contact_data_result.get("PHONE", []) if phone.get("VALUE")]
-
-
-def is_phone_in_target_format(digits: str) -> bool:
-    return len(digits) == 13 and digits.startswith("55") and digits[4:5] == "9"
-
-
-def normalize_phone_number(phone: str) -> tuple[str | None, bool]:
-    if not phone:
-        return None, False
-
-    digits = re.sub(r"\D", "", phone)
-
-    if is_phone_in_target_format(digits):
-        return digits, False
-
-    if len(digits) == 11:
-        return f"55{digits}", True
-
-    if len(digits) == 10:
-        ddd = digits[:2]
-        number = digits[2:]
-        return f"55{ddd}9{number}", True
-
-    if len(digits) == 13 and digits.startswith("55"):
-        ddd = digits[2:4]
-        number = digits[4:]
-        if number.startswith("9"):
-            return digits, False
-        return f"55{ddd}9{number}", True
-
-    return None, False
-
-
-def normalize_contact_phones(raw_phones: list[str]) -> tuple[list[str], bool]:
-    normalized_phones: list[str] = []
-    phone_was_corrected = False
-
-    for phone in raw_phones:
-        normalized_phone, corrected = normalize_phone_number(phone)
-        if normalized_phone:
-            normalized_phones.append(normalized_phone)
-            phone_was_corrected = phone_was_corrected or corrected
-
-    return normalized_phones, phone_was_corrected
 
 
 def filter_useful_properties(contact_data: dict) -> dict:
